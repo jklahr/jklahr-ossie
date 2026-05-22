@@ -99,7 +99,7 @@ ontology_mappings:
   - name: flights_map
     description: Example mapping of logical fields to ontology concepts and relationships
     ontology: flights
-    logical_model:
+    semantic_model:
       name: Logical_Flights_Model
       description: Logical model for flight data
       datasets:
