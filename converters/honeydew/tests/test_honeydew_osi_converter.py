@@ -401,7 +401,10 @@ _REL_MODEL = {
             "type": "dataset", "entity": "orders", "name": "orders",
             "sql": "db.s.orders", "dataset_type": "table",
             "attributes": [{"column": "status", "name": "status",
-                            "datatype": "string", "labels": ["sales"]}],
+                            "datatype": "string", "labels": ["sales"],
+                            "metadata": [{"name": "osi", "metadata": [
+                                {"name": "label", "value": "sales"}
+                            ]}]}],
         },
         id="label-in-attr",
     ),
@@ -841,7 +844,6 @@ def test_honeydew_to_osi_duplicate_relations_deduplicated(tmp_path):
         {"name": "m", "datasets": [{"name": "orders", "source": "db.s.orders",
             "fields": [{"name": "status", "expression": _ansi("status"),
                         "dimension": {"is_time": False},
-                        "ai_context": {"synonyms": ["sales"]},
                         "label": "sales"}]}]},
         id="field-label",
     ),

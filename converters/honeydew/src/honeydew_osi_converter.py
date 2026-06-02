@@ -188,6 +188,7 @@ def _fields_to_honeydew(
 
         field_meta = _build_osi_metadata(
             ai_context=field_ai_ctx if isinstance(field_ai_ctx, dict) else None,
+            label=field_label if field_label and not isinstance(field_ai_ctx, dict) else None,
             custom_extensions=field_ext or None,
         )
 
@@ -623,6 +624,12 @@ def _read_entity_dir(entity_dir: str, entity_name: str) -> dict[str, Any]:
             if fn.endswith((".yml", ".yaml")):
                 with open(os.path.join(datasets_dir, fn)) as f:
                     all_ds.append(yaml.safe_load(f) or {})
+        if len(all_ds) > 1:
+            warnings.warn(
+                f"Entity '{entity_name}' has {len(all_ds)} dataset files; "
+                "only the primary dataset will be converted",
+                stacklevel=2,
+            )
         for ds in all_ds:
             if ds.get("name") == data["key_dataset"] or data["primary_dataset"] is None:
                 data["primary_dataset"] = ds
@@ -700,14 +707,18 @@ def _entity_to_osi_dataset(entity_data: dict[str, Any]) -> dict[str, Any]:
             attr_osi_meta = _read_osi_metadata(attr)
             attr_labels = attr.get("labels") or []
 
-            # Restore ai_context (structured form takes priority, else build from labels)
+            # Restore ai_context (structured form takes priority)
+            # Only synthesise synonyms from labels when they are native Honeydew labels
+            # (i.e. osi_meta has no 'label' key, meaning the label didn't come from OSI)
             if attr_osi_meta.get("ai_context"):
                 field["ai_context"] = attr_osi_meta["ai_context"]
-            elif attr_labels:
+            elif attr_labels and "label" not in attr_osi_meta:
                 field["ai_context"] = {"synonyms": list(attr_labels)}
 
-            # Restore label (first Honeydew label maps to OSI label)
-            if attr_labels:
+            # Restore label: prefer osi_meta (exact round-trip), else first Honeydew label
+            if "label" in attr_osi_meta:
+                field["label"] = attr_osi_meta["label"]
+            elif attr_labels:
                 field["label"] = attr_labels[0]
 
             # Honeydew-specific metadata → HONEYDEW custom_extension
@@ -754,10 +765,12 @@ def _entity_to_osi_dataset(entity_data: dict[str, Any]) -> dict[str, Any]:
 
         if calc_osi_meta.get("ai_context"):
             field["ai_context"] = calc_osi_meta["ai_context"]
-        elif calc_labels:
+        elif calc_labels and "label" not in calc_osi_meta:
             field["ai_context"] = {"synonyms": list(calc_labels)}
 
-        if calc_labels:
+        if "label" in calc_osi_meta:
+            field["label"] = calc_osi_meta["label"]
+        elif calc_labels:
             field["label"] = calc_labels[0]
 
         calc_honeydew_extra = {
@@ -882,6 +895,7 @@ def _honeydew_metric_to_osi(metric: dict[str, Any], entity_name: str) -> dict[st
 def _build_osi_metadata(
     *,
     ai_context: Any = None,
+    label: str | None = None,
     unique_keys: Any = None,
     custom_extensions: list | None = None,
     extra_vendors: list[str] | None = None,
@@ -892,6 +906,8 @@ def _build_osi_metadata(
     if ai_context is not None:
         val = ai_context if isinstance(ai_context, str) else json.dumps(ai_context)
         items.append({"name": "ai_context", "value": val})
+    if label is not None:
+        items.append({"name": "label", "value": label})
     if unique_keys:
         items.append({"name": "unique_keys", "value": json.dumps(unique_keys)})
     if custom_extensions:
@@ -918,6 +934,8 @@ def _read_osi_metadata(obj: dict[str, Any]) -> dict[str, Any]:
                     result[key] = json.loads(raw)
                 except (json.JSONDecodeError, TypeError):
                     result[key] = raw
+            elif key == "label":
+                result[key] = raw
             elif key in ("unique_keys", "custom_extensions", "vendors"):
                 try:
                     result[key] = json.loads(raw)
