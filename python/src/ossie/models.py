@@ -35,7 +35,7 @@ class OSIDialect(str, Enum):
 
 
 class OSIVendor(str, Enum):
-    """Vendors with supported custom extensions."""
+    """Well-known vendor names for custom extensions."""
 
     COMMON = "COMMON"
     SNOWFLAKE = "SNOWFLAKE"
@@ -63,7 +63,7 @@ class OSICustomExtension(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    vendor_name: OSIVendor
+    vendor_name: str
     data: str
 
 

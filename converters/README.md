@@ -281,7 +281,7 @@ Given the [TPC-DS example](../examples/tpcds_semantic_model.yaml) included in th
 
 To add support for a new vendor:
 
-1. Add the vendor to the `vendors` enum in the [core specification](../core-spec/spec.md) if not already present.
+1. Use a stable `vendor_name` string in each custom extension emitted by the converter.
 2. Define the custom extension schema for the vendor (what vendor-specific metadata fields are supported in the `data` JSON).
 3. Implement the export converter (Ossie → Vendor).
 4. Implement the import converter (Vendor → Ossie).
