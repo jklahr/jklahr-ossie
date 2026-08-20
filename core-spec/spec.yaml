@@ -291,9 +291,11 @@ fields:
     # Hidden fields remain available for expressions but are not surfaced to end users
     hidden: boolean
 
-    # Optional: Organizational grouping label for UI presentation
+    # Optional: Organizational grouping labels for UI presentation
     # Used to organize fields into logical folders or categories
-    group_label: string
+    # A field may belong to more than one group
+    group_labels:
+      - string  # e.g., "Revenue", "Financial Metrics"
 
     # Optional: Vendor-specific attributes for extensibility
     custom_extensions:
@@ -369,8 +371,10 @@ metrics:
     # Optional: Whether this metric should be hidden from consumer UIs
     hidden: boolean
 
-    # Optional: Organizational grouping label for UI presentation
-    group_label: string
+    # Optional: Organizational grouping labels for UI presentation
+    # A metric may belong to more than one group
+    group_labels:
+      - string  # e.g., "Revenue", "Financial Metrics"
 
     # Optional: Vendor-specific attributes for extensibility
     custom_extensions:

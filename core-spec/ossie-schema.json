@@ -292,9 +292,12 @@
           "type": "boolean",
           "description": "Whether this field should be hidden from consumer UIs"
         },
-        "group_label": {
-          "type": "string",
-          "description": "Organizational grouping label for UI presentation"
+        "group_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Organizational grouping labels for UI presentation. A field may belong to more than one group."
         },
         "custom_extensions": {
           "type": "array",
@@ -455,9 +458,12 @@
           "type": "boolean",
           "description": "Whether this metric should be hidden from consumer UIs"
         },
-        "group_label": {
-          "type": "string",
-          "description": "Organizational grouping label for UI presentation"
+        "group_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Organizational grouping labels for UI presentation. A field may belong to more than one group."
         },
         "custom_extensions": {
           "type": "array",

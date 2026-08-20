@@ -246,7 +246,7 @@ Fields represent row-level attributes that can be used for grouping, filtering, 
 | `default_time_granularity` | string | No | Default time bucket for temporal fields: `day`, `week`, `month`, `quarter`, `year` |
 | `semantic_mappings` | array | No | Links to external ontologies (see [Semantic Mappings](#semantic-mappings)) |
 | `hidden` | boolean | No | Whether this field should be hidden from consumer UIs |
-| `group_label` | string | No | Organizational grouping label for UI presentation |
+| `group_labels` | array of strings | No | Organizational grouping labels for UI presentation. A field may belong to more than one group. |
 | `custom_extensions` | array | No | Vendor-specific attributes |
 
 ### Expression Object
@@ -387,7 +387,7 @@ Quantitative measures defined on business data, representing key calculations li
 | `default_sort` | object | No | Default sorting behavior (see [Default Sort](#default-sort)) |
 | `semantic_mappings` | array | No | Links to external ontologies (see [Semantic Mappings](#semantic-mappings)) |
 | `hidden` | boolean | No | Whether this metric should be hidden from consumer UIs |
-| `group_label` | string | No | Organizational grouping label for UI presentation |
+| `group_labels` | array of strings | No | Organizational grouping labels for UI presentation. A field may belong to more than one group. |
 | `custom_extensions` | array | No | Vendor-specific attributes |
 
 ### Expression Object
@@ -582,7 +582,9 @@ The `display_format` string follows Excel-compatible custom number format conven
   semantic_mappings:
     - target: https://schema.org/MonetaryAmount
       predicate: exactMatch
-  group_label: "Revenue"
+  group_labels:
+    - "Revenue"
+    - "Financial Metrics"
 ```
 
 **Metric with extended metadata:**
@@ -603,7 +605,9 @@ The `display_format` string follows Excel-compatible custom number format conven
   desired_direction: higher_is_better
   default_sort:
     direction: desc
-  group_label: "Revenue"
+  group_labels:
+    - "Revenue"
+    - "Financial Metrics"
   semantic_mappings:
     - target: https://schema.org/MonetaryAmount
       predicate: exactMatch
