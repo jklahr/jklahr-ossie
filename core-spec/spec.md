@@ -442,7 +442,7 @@ The following types are used by the extended metadata fields on both fields and 
 
 ### Semantic Type
 
-High-level classification of a field or metric value. Accepts either a **well-known token** or a **URI** pointing to an external type system. Using URIs keeps the field registry-agnostic and allows governed external type systems to carry the long tail of domain-specific types.
+High-level classification of a field or metric value. Accepts either a **well-known token** or an **absolute URI** pointing to an external type system. Using URIs keeps the field registry-agnostic and allows governed external type systems to carry the long tail of domain-specific types.
 
 **Well-known tokens:**
 
@@ -463,6 +463,8 @@ semantic_type: https://www.iso20022.org/glossary/LEI
 semantic_type: https://fpml.org/types/ISIN
 semantic_type: https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/UPI
 ```
+
+A URI value MUST include a scheme (for example `https:` or `urn:`). This keeps the URI form distinguishable from the token form, so a value that is neither a well-known token nor a scheme-qualified URI — such as a misspelled `monetory` — is rejected rather than silently accepted as an opaque type reference.
 
 ### Measurement
 

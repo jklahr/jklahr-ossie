@@ -232,7 +232,8 @@ fields:
 
     # Optional: High-level semantic classification of the field
     # Helps consumers determine appropriate visualization and handling
-    # Either a well-known token OR a URI pointing to an external type system
+    # Either a well-known token OR an absolute URI (scheme required) pointing to
+    # an external type system
     # Well-known tokens: categorical, quantitative, monetary, temporal, geographic, ordinal, identifier
     # URI examples: https://www.iso20022.org/glossary/LEI, https://fpml.org/types/ISIN
     semantic_type: string
@@ -338,7 +339,8 @@ metrics:
     display_label: string
 
     # Optional: High-level semantic classification of the metric
-    # Either a well-known token OR a URI pointing to an external type system
+    # Either a well-known token OR an absolute URI (scheme required) pointing to
+    # an external type system
     # Well-known tokens: categorical, quantitative, monetary, temporal, geographic, ordinal, identifier
     semantic_type: string
 

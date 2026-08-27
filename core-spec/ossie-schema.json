@@ -125,8 +125,8 @@
       "description": "Logical data type for fields and metrics, independent of role (e.g. dimension vs fact) and physical representation. `Decimal` is exact base-10 with unspecified precision and scale; `Float` is approximate. `DateTime` has no timezone or offset, while `DateTimeTz` identifies an instant using offset or timezone context but does not guarantee preservation of a named timezone. Omit `datatype` when unknown; use `Opaque` plus `custom_extensions` for a known type outside the portable vocabulary."
     },
     "SemanticType": {
-      "description": "High-level semantic classification of a field or metric. Either a well-known token or a URI pointing to an external type system.",
-      "oneOf": [
+      "description": "High-level semantic classification of a field or metric. Either a well-known token or an absolute URI pointing to an external type system.",
+      "anyOf": [
         {
           "type": "string",
           "enum": ["categorical", "quantitative", "monetary", "temporal", "geographic", "ordinal", "identifier"],
@@ -134,8 +134,8 @@
         },
         {
           "type": "string",
-          "format": "uri",
-          "description": "URI pointing to an external type system (e.g., ISO 20022, FIBO, SKOS vocabulary)"
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
+          "description": "Absolute URI pointing to an external type system (e.g., ISO 20022, FIBO, a SKOS vocabulary). Must include a scheme, e.g. https://www.iso20022.org/glossary/LEI. The scheme requirement keeps this branch disjoint from the token branch, so a misspelled token is rejected rather than silently accepted as a URI."
         }
       ]
     },
