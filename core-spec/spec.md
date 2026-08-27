@@ -244,7 +244,7 @@ Fields represent row-level attributes that can be used for grouping, filtering, 
 | `default_aggregation` | string | No | Default aggregation when used as a measure: `sum`, `avg`, `min`, `max`, `count`, `count_distinct` |
 | `default_sort` | object | No | Default sorting behavior (see [Default Sort](#default-sort)) |
 | `default_time_granularity` | string | No | Default time bucket for temporal fields: `day`, `week`, `month`, `quarter`, `year` |
-| `semantic_mappings` | array | No | Links to external ontologies (see [Semantic Mappings](#semantic-mappings)) |
+| `glossary_references` | array | No | References to concepts in external glossaries or ontologies (see [Glossary References](#glossary-references)) |
 | `hidden` | boolean | No | Whether this field should be hidden from consumer UIs |
 | `group_labels` | array of strings | No | Organizational grouping labels for UI presentation. A field may belong to more than one group. |
 | `custom_extensions` | array | No | Vendor-specific attributes |
@@ -385,7 +385,7 @@ Quantitative measures defined on business data, representing key calculations li
 | `display_format` | string | No | Excel-compatible format string (e.g., `$#,##0.00`, `0.0%`) |
 | `desired_direction` | string | No | KPI polarity: `higher_is_better`, `lower_is_better`, `neutral` |
 | `default_sort` | object | No | Default sorting behavior (see [Default Sort](#default-sort)) |
-| `semantic_mappings` | array | No | Links to external ontologies (see [Semantic Mappings](#semantic-mappings)) |
+| `glossary_references` | array | No | References to concepts in external glossaries or ontologies (see [Glossary References](#glossary-references)) |
 | `hidden` | boolean | No | Whether this metric should be hidden from consumer UIs |
 | `group_labels` | array of strings | No | Organizational grouping labels for UI presentation. A field may belong to more than one group. |
 | `custom_extensions` | array | No | Vendor-specific attributes |
@@ -503,15 +503,15 @@ default_sort:
   nulls: last
 ```
 
-### Semantic Mappings
+### Glossary References
 
-Links a field or metric to external ontologies or standards using a SKOS-based predicate. The predicate vocabulary is **intentionally open** — the SKOS predicates provide a well-understood baseline, but non-standard predicates (e.g., `DISTINCT_FROM` for regulatory disambiguation) are permitted and can be expressed via extensions without being schema-invalid.
+References a field or metric to concepts in an external glossary, ontology, or standard using a SKOS-based predicate. The predicate vocabulary is **intentionally open** — the SKOS predicates provide a well-understood baseline, but non-standard predicates (e.g., `DISTINCT_FROM` for regulatory disambiguation) are permitted and can be expressed via extensions without being schema-invalid.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `target` | string (URI) | Yes | URI of the external concept |
 | `predicate` | string | No | Relationship type. Defaults to `exactMatch`. SKOS baseline predicates listed below. Vocabulary is open. |
-| `provenance` | string | No | Origin of this mapping (e.g., `"manual"`, `"FIBO 4.1"`, a tool name) |
+| `provenance` | string | No | Origin of this reference (e.g., `"manual"`, `"FIBO 4.1"`, a tool name) |
 
 **SKOS baseline predicates:**
 
@@ -526,7 +526,7 @@ Links a field or metric to external ontologies or standards using a SKOS-based p
 **Example — standard alignment:**
 
 ```yaml
-semantic_mappings:
+glossary_references:
   - target: https://schema.org/MonetaryAmount
     predicate: exactMatch
     provenance: manual
@@ -535,13 +535,13 @@ semantic_mappings:
 **Example — regulatory disambiguation (open predicate):**
 
 ```yaml
-semantic_mappings:
+glossary_references:
   - target: https://spec.edmcouncil.org/fibo/ontology/DER/RateDerivatives/IRSwaps/Counterparty
     predicate: exactMatch
     provenance: FIBO 4.1
   - target: https://www.esma.europa.eu/emir/Counterparty
     predicate: DISTINCT_FROM
-    provenance: EMIR-vs-MiFIR mapping review 2024
+    provenance: EMIR-vs-MiFIR review 2024
 ```
 
 ### Display Format
@@ -581,7 +581,7 @@ The `display_format` string follows Excel-compatible custom number format conven
   default_sort:
     direction: desc
     nulls: last
-  semantic_mappings:
+  glossary_references:
     - target: https://schema.org/MonetaryAmount
       predicate: exactMatch
   group_labels:
@@ -610,7 +610,7 @@ The `display_format` string follows Excel-compatible custom number format conven
   group_labels:
     - "Revenue"
     - "Financial Metrics"
-  semantic_mappings:
+  glossary_references:
     - target: https://schema.org/MonetaryAmount
       predicate: exactMatch
 ```

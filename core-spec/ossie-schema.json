@@ -198,9 +198,9 @@
       },
       "additionalProperties": false
     },
-    "SemanticMapping": {
+    "GlossaryReference": {
       "type": "object",
-      "description": "Link to an external ontology or standard using a SKOS-based predicate. The predicate vocabulary is intentionally open to allow non-positive assertions (e.g. DISTINCT_FROM) via extensions.",
+      "description": "Reference to a concept in an external glossary, ontology, or standard, using a SKOS-based predicate. The predicate vocabulary is intentionally open to allow non-positive assertions (e.g. DISTINCT_FROM) via extensions.",
       "properties": {
         "target": {
           "type": "string",
@@ -213,7 +213,7 @@
         },
         "provenance": {
           "type": "string",
-          "description": "Optional: origin of this mapping (e.g., 'manual', 'FIBO 4.1', a tool name)"
+          "description": "Optional: origin of this reference (e.g., 'manual', 'FIBO 4.1', a tool name)"
         }
       },
       "required": ["target"],
@@ -281,12 +281,12 @@
         "default_time_granularity": {
           "$ref": "#/$defs/DefaultTimeGranularity"
         },
-        "semantic_mappings": {
+        "glossary_references": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/SemanticMapping"
+            "$ref": "#/$defs/GlossaryReference"
           },
-          "description": "Links to external ontologies or standards"
+          "description": "References to concepts in external glossaries, ontologies, or standards"
         },
         "hidden": {
           "type": "boolean",
@@ -447,12 +447,12 @@
         "default_sort": {
           "$ref": "#/$defs/DefaultSort"
         },
-        "semantic_mappings": {
+        "glossary_references": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/SemanticMapping"
+            "$ref": "#/$defs/GlossaryReference"
           },
-          "description": "Links to external ontologies or standards"
+          "description": "References to concepts in external glossaries, ontologies, or standards"
         },
         "hidden": {
           "type": "boolean",

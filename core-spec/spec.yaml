@@ -279,14 +279,14 @@ fields:
     # Values: day, week, month, quarter, year
     default_time_granularity: string
 
-    # Optional: Links to external ontologies or standards
+    # Optional: References to external glossaries, ontologies, or standards
     # Uses SKOS-based predicates as a baseline but the predicate vocabulary is open,
     # allowing extensions to express non-positive assertions (e.g., DISTINCT_FROM)
-    semantic_mappings:
+    glossary_references:
       - target: string      # URI of the external concept (e.g., https://schema.org/MonetaryAmount)
         predicate: string   # Relationship type. SKOS baseline: exactMatch, closeMatch, broadMatch,
                             # narrowMatch, relatedMatch. Defaults to exactMatch. Vocabulary is open.
-        provenance: string  # Optional: source of this mapping (e.g., "manual", "FIBO 4.1", a tool name)
+        provenance: string  # Optional: source of this reference (e.g., "manual", "FIBO 4.1", a tool name)
 
     # Optional: Whether this field should be hidden from consumer UIs
     # Hidden fields remain available for expressions but are not surfaced to end users
@@ -363,12 +363,12 @@ metrics:
       direction: string  # asc, desc
       nulls: string      # first, last
 
-    # Optional: Links to external ontologies or standards
+    # Optional: References to external glossaries, ontologies, or standards
     # Uses SKOS-based predicates as a baseline but the predicate vocabulary is open
-    semantic_mappings:
+    glossary_references:
       - target: string      # URI of the external concept
         predicate: string   # Relationship type (SKOS baseline, open vocabulary). Default: exactMatch
-        provenance: string  # Optional: source of this mapping
+        provenance: string  # Optional: source of this reference
 
     # Optional: Whether this metric should be hidden from consumer UIs
     hidden: boolean
