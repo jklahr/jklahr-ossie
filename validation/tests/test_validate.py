@@ -411,3 +411,28 @@ def test_model_metric_may_reuse_a_field_or_dataset_name(name: str) -> None:
     doc = _metric_document(model_metrics=[_metric(name, "SUM(orders.amount)")])
 
     assert validate_unique_names(doc) == []
+
+
+def test_metric_may_reference_an_undeclared_source_column() -> None:
+    # A dataset-scoped metric's expression is written against the dataset's
+    # source, so a column used only inside a metric need not be declared as a
+    # field first. Here 'tax' is not in fields.
+    doc = _metric_document(
+        [_metric("total_tax", "SUM(tax)")],
+        fields=[_field("amount")],
+    )
+
+    assert validate_metric_scoping(doc) == []
+
+
+def test_declared_field_does_not_shadow_a_source_column() -> None:
+    # A field named 'foo' whose expression is not simply 'foo' does not change
+    # how 'foo' resolves inside a metric of the same dataset: it is still the
+    # source column, so the metric stays valid and unqualified.
+    shadowing_field = {"name": "foo", "expression": _expr("UPPER(bar)")}
+    doc = _metric_document(
+        [_metric("foo_total", "SUM(foo)")],
+        fields=[shadowing_field],
+    )
+
+    assert validate_metric_scoping(doc) == []

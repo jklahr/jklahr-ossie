@@ -33,8 +33,8 @@ Validates Ossie YAML files against:
 1. JSON Schema (structure, types, enums)
 2. Unique names (datasets, fields, metrics, relationships)
 3. Valid relationship references
-4. Metric scoping (a dataset-scoped metric's expression references fields of its
-   own dataset by unqualified name)
+4. Metric scoping (a dataset-scoped metric's expression references columns of its
+   own dataset's source by unqualified name)
 5. SQL syntax (using sqlglot)
 
 Usage:
@@ -262,10 +262,11 @@ def _leading_qualifiers(tree) -> set[str]:
 def validate_metric_scoping(data: dict) -> list[str]:
     """Validate the expression rules for dataset-scoped metrics.
 
-    A dataset-scoped metric's expression must reference fields of the dataset
-    that declares it by unqualified name. A qualifier is therefore always an
-    error: it either names another dataset, in which case the metric belongs in
-    semantic_model.metrics, or it names the declaring dataset redundantly.
+    A dataset-scoped metric's expression is written against its dataset's
+    source and must reference the source's columns by unqualified name. A
+    qualifier is therefore always an error: it either names another dataset, in
+    which case the metric belongs in semantic_model.metrics, or it names the
+    declaring dataset redundantly.
 
     This checks the expression only. It says nothing about how the metric may be
     queried: a dataset-scoped metric is joined and grouped like any other, using
@@ -324,17 +325,18 @@ def validate_metric_scoping(data: dict) -> list[str]:
                             f"[Scope] Dataset-scoped metric '{dataset_name}.{metric_name}' "
                             f"in model '{model_name}' ({dialect}) references "
                             f"dataset(s) {', '.join(repr(f) for f in sorted(foreign))}. "
-                            f"Dataset-scoped metrics aggregate fields of one dataset; "
-                            f"a metric spanning datasets is model-scoped and belongs in "
+                            f"Dataset-scoped metrics aggregate columns of one "
+                            f"dataset's source; a metric spanning datasets is "
+                            f"model-scoped and belongs in "
                             f"semantic_model.metrics."
                         )
 
                     if self_qualified:
                         errors.append(
                             f"[Scope] Dataset-scoped metric '{dataset_name}.{metric_name}' "
-                            f"in model '{model_name}' ({dialect}) qualifies a field with its "
+                            f"in model '{model_name}' ({dialect}) qualifies a column with its "
                             f"own dataset name. Dataset-scoped metric expressions reference "
-                            f"fields by unqualified name; drop the '{dataset_name}.' prefix."
+                            f"columns by unqualified name; drop the '{dataset_name}.' prefix."
                         )
 
     return errors
