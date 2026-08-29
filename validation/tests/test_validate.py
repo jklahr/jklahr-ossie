@@ -225,18 +225,28 @@ _CUSTOMERS_WITH_ID = {
 # --- scoping rules ---------------------------------------------------------
 
 
-def test_dataset_scoped_metric_accepts_unqualified_field_reference() -> None:
+def test_dataset_scoped_metric_accepts_unqualified_column_reference() -> None:
     doc = _metric_document([_metric("total", "SUM(amount)")])
 
     assert validate_metric_scoping(doc) == []
 
 
-def test_dataset_scoped_metric_rejects_its_own_dataset_as_a_qualifier() -> None:
+def test_dataset_scoped_metric_accepts_a_qualified_declared_field() -> None:
+    # A qualifier names a declared field, which is how a metric reuses a
+    # field's expression rather than repeating it. `amount` is declared here.
+    doc = _metric_document([_metric("total", "SUM(orders.amount)")])
+
+    assert validate_metric_scoping(doc) == []
+
+
+def test_dataset_scoped_metric_rejects_a_qualified_undeclared_name() -> None:
+    # `tax` is a column of the source, not a declared field, so the qualified
+    # spelling is wrong: it should be written SUM(tax).
     errors = validate_metric_scoping(
-        _metric_document([_metric("total", "SUM(orders.amount)")])
+        _metric_document([_metric("total", "SUM(orders.tax)")])
     )
 
-    assert any("own dataset name" in error for error in errors)
+    assert any("MUST name a declared field" in error for error in errors)
 
 
 def test_dataset_scoped_metric_rejects_another_dataset() -> None:
@@ -250,7 +260,7 @@ def test_dataset_scoped_metric_rejects_another_dataset() -> None:
 
 
 def test_dataset_scope_does_not_limit_aggregation_complexity() -> None:
-    # Rule 1 limits which fields an expression may reach, not its complexity.
+    # Rule 1 limits what an expression may reach, not its complexity.
     doc = _metric_document(
         [_metric("odd", "SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) / NULLIF(COUNT(*), 0)")]
     )
@@ -264,13 +274,13 @@ def test_dataset_scope_does_not_limit_aggregation_complexity() -> None:
 def test_uppercase_qualifier_is_not_reported_as_a_missing_dataset() -> None:
     # SQL identifiers are case-insensitive, but the qualifier was compared
     # against the raw YAML name, so SUM(ORDERS.AMOUNT) on dataset `orders` was
-    # rejected while naming a dataset that does not exist.
+    # rejected while naming a dataset that does not exist. Both the qualifier
+    # and the field name it qualifies must be matched case-insensitively.
     errors = validate_metric_scoping(
         _metric_document([_metric("total", "SUM(ORDERS.AMOUNT)", "SNOWFLAKE")])
     )
 
-    assert not any("references dataset(s)" in error for error in errors)
-    assert any("own dataset name" in error for error in errors)
+    assert errors == []
 
 
 def test_struct_path_is_not_reported_as_a_dataset() -> None:
@@ -284,12 +294,24 @@ def test_struct_path_is_not_reported_as_a_dataset() -> None:
 
 
 def test_three_part_path_reports_the_dataset_not_the_struct_field() -> None:
+    # sqlglot places the middle element of a three-part path in Column.table,
+    # so reading `table` alone reported the struct field as a dataset. The
+    # qualifier must read as `orders` and the name it qualifies as `payload`,
+    # which is undeclared here.
     errors = validate_metric_scoping(
         _metric_document([_metric("total", "SUM(orders.payload.amount)")])
     )
 
-    assert any("own dataset name" in error for error in errors)
-    assert not any("'payload'" in error for error in errors)
+    assert any("'orders.payload'" in error for error in errors)
+    assert not any("references dataset(s)" in error for error in errors)
+
+
+def test_three_part_path_to_a_declared_struct_field_is_valid() -> None:
+    doc = _metric_document(
+        [_metric("total", "SUM(orders.payload.amount)")], fields=[_field("payload")]
+    )
+
+    assert validate_metric_scoping(doc) == []
 
 
 def test_local_alias_is_not_reported_as_a_dataset() -> None:
@@ -425,13 +447,16 @@ def test_metric_may_reference_an_undeclared_source_column() -> None:
     assert validate_metric_scoping(doc) == []
 
 
-def test_declared_field_does_not_shadow_a_source_column() -> None:
-    # A field named 'foo' whose expression is not simply 'foo' does not change
-    # how 'foo' resolves inside a metric of the same dataset: it is still the
-    # source column, so the metric stays valid and unqualified.
+def test_declared_field_and_source_column_may_share_a_name() -> None:
+    # A field `foo` whose expression is not simply `foo` does not shadow the
+    # source column `foo`. The two spellings keep them separately reachable:
+    # `orders.foo` is the field, bare `foo` is the column.
     shadowing_field = {"name": "foo", "expression": _expr("UPPER(bar)")}
     doc = _metric_document(
-        [_metric("foo_total", "SUM(foo)")],
+        [
+            _metric("via_field", "COUNT(DISTINCT orders.foo)"),
+            _metric("via_column", "COUNT(DISTINCT foo)"),
+        ],
         fields=[shadowing_field],
     )
 

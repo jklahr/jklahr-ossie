@@ -33,8 +33,8 @@ Validates Ossie YAML files against:
 1. JSON Schema (structure, types, enums)
 2. Unique names (datasets, fields, metrics, relationships)
 3. Valid relationship references
-4. Metric scoping (a dataset-scoped metric's expression references columns of its
-   own dataset's source by unqualified name)
+4. Metric scoping (a dataset-scoped metric's expression references its dataset's
+   declared fields as dataset.field, and its source's columns unqualified)
 5. SQL syntax (using sqlglot)
 
 Usage:
@@ -242,39 +242,44 @@ def _parse_expression(expr: str, dialect: str):
     return None, error
 
 
-def _leading_qualifiers(tree) -> set[str]:
-    """The leading name of every qualified column path in an expression.
+def _qualified_references(tree) -> set[tuple[str, str]]:
+    """Every qualified column path in an expression, as (qualifier, name).
 
-    ``orders.amount`` yields ``{"orders"}``. For a three-part path such as
-    ``payload.attrs.value``, sqlglot puts the middle part in ``Column.table``
-    and the first in ``Column.db``, so reading ``table`` alone would report
-    ``attrs``. Taking ``parts[0]`` gives the outermost name in every case.
-    Unqualified columns contribute nothing.
+    ``orders.amount`` yields ``{("orders", "amount")}``. For a three-part path
+    such as ``payload.attrs.value``, sqlglot puts the middle part in
+    ``Column.table`` and the first in ``Column.db``, so reading ``table`` alone
+    would report ``attrs``. Taking ``parts[0]`` and ``parts[1]`` gives the
+    outermost qualifier and the name it qualifies in every case. Unqualified
+    columns contribute nothing.
     """
-    names = set()
+    refs = set()
     for col in tree.find_all(exp.Column):
         parts = [part.name for part in col.parts]
-        if len(parts) > 1 and parts[0]:
-            names.add(parts[0])
-    return names
+        if len(parts) > 1 and parts[0] and parts[1]:
+            refs.add((parts[0], parts[1]))
+    return refs
 
 
 def validate_metric_scoping(data: dict) -> list[str]:
     """Validate the expression rules for dataset-scoped metrics.
 
-    A dataset-scoped metric's expression is written against its dataset's
-    source and must reference the source's columns by unqualified name. A
-    qualifier is therefore always an error: it either names another dataset, in
-    which case the metric belongs in semantic_model.metrics, or it names the
-    declaring dataset redundantly.
+    A dataset-scoped metric's expression may reference the declared fields of
+    its dataset, written dataset_name.field_name, and the columns of its
+    source, written unqualified. Two things are errors: a qualifier naming
+    another dataset, since such a metric belongs in semantic_model.metrics, and
+    a qualifier naming the declaring dataset followed by a name that is not one
+    of its declared fields.
+
+    Whether a bare name is a real column of the source is not checked, because
+    that needs catalog metadata the model does not carry. A qualified reference
+    is checked, because the field list is in the model.
 
     This checks the expression only. It says nothing about how the metric may be
     queried: a dataset-scoped metric is joined and grouped like any other, using
     the model's relationships.
 
-    A qualifier that names neither a dataset nor a field of the declaring
-    dataset is left alone: it is a local alias, CTE, or subquery source rather
-    than a dataset reference.
+    A qualifier that names neither the declaring dataset nor another dataset is
+    left alone: it is a local alias, CTE, or subquery source.
     """
     errors = []
 
@@ -290,6 +295,11 @@ def validate_metric_scoping(data: dict) -> list[str]:
             dataset_name = dataset.get("name", "<unnamed>")
             own_name = dataset_name.casefold()
             other_dataset_names = all_dataset_names - {own_name}
+            own_field_names = {
+                f["name"].casefold()
+                for f in dataset.get("fields", [])
+                if f.get("name")
+            }
 
             for metric in dataset.get("metrics", []):
                 metric_name = metric.get("name", "<unnamed>")
@@ -306,37 +316,39 @@ def validate_metric_scoping(data: dict) -> list[str]:
                         continue
 
                     foreign = set()
-                    self_qualified = False
+                    undeclared = set()
 
-                    for qualifier in _leading_qualifiers(tree):
+                    for qualifier, referenced in _qualified_references(tree):
                         folded = qualifier.casefold()
                         if folded == own_name:
-                            # Qualifying a field with the declaring dataset's own
-                            # name. Valid SQL, but not the required spelling.
-                            self_qualified = True
+                            # Qualifying with the declaring dataset's own name
+                            # is a reference to one of its declared fields.
+                            if referenced.casefold() not in own_field_names:
+                                undeclared.add(f"{qualifier}.{referenced}")
                         elif folded in other_dataset_names:
                             foreign.add(qualifier)
-                        # Anything else is a field of this dataset (struct or
-                        # variant access) or a local alias, so it is not a
-                        # dataset reference and needs no report.
+                        # Anything else is a struct or variant path, or a local
+                        # alias, so it is not a dataset reference and needs no
+                        # report.
 
                     if foreign:
                         errors.append(
                             f"[Scope] Dataset-scoped metric '{dataset_name}.{metric_name}' "
                             f"in model '{model_name}' ({dialect}) references "
                             f"dataset(s) {', '.join(repr(f) for f in sorted(foreign))}. "
-                            f"Dataset-scoped metrics aggregate columns of one "
-                            f"dataset's source; a metric spanning datasets is "
-                            f"model-scoped and belongs in "
-                            f"semantic_model.metrics."
+                            f"Dataset-scoped metrics aggregate one dataset; a "
+                            f"metric spanning datasets is model-scoped and "
+                            f"belongs in semantic_model.metrics."
                         )
 
-                    if self_qualified:
+                    if undeclared:
                         errors.append(
                             f"[Scope] Dataset-scoped metric '{dataset_name}.{metric_name}' "
-                            f"in model '{model_name}' ({dialect}) qualifies a column with its "
-                            f"own dataset name. Dataset-scoped metric expressions reference "
-                            f"columns by unqualified name; drop the '{dataset_name}.' prefix."
+                            f"in model '{model_name}' ({dialect}) references "
+                            f"{', '.join(repr(u) for u in sorted(undeclared))}. "
+                            f"A qualified reference MUST name a declared field "
+                            f"of dataset '{dataset_name}'; reference a column of "
+                            f"its source by unqualified name instead."
                         )
 
     return errors
